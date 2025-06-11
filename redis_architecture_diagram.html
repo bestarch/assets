@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redis Data Integration Architecture</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        
+        .title {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .architecture {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            align-items: center;
+        }
+        
+        .layer {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .layer-title {
+            position: absolute;
+            top: -20px;
+            left: 0;
+            font-weight: bold;
+            color: #34495e;
+            font-size: 14px;
+        }
+        
+        /* Application Layer */
+        .application {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        /* Redis Cloud Layer */
+        .redis-cloud {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 18px 35px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.3);
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .redis-logo {
+            width: 35px;
+            height: 35px;
+            background: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        
+        /* Redis Data Integration Layer */
+        .redis-integration {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            padding: 18px 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.3);
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        /* Data Sources Layer */
+        .data-sources {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .source-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            min-width: 280px;
+        }
+        
+        .cloud-header {
+            padding: 12px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        
+        .aws-header {
+            background: linear-gradient(135deg, #ff9500, #ff6b35);
+        }
+        
+        .gcp-header {
+            background: linear-gradient(135deg, #4285f4, #34a853);
+        }
+        
+        .third-group-header {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+        
+        .services-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .service-category {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            border-left: 3px solid #3498db;
+        }
+        
+        .service-category-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+        
+        .service-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .service-item {
+            background: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #34495e;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        /* Arrows */
+        .arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 8px auto;
+            color: #2c3e50;
+        }
+        
+        .arrow-line {
+            width: 3px;
+            height: 20px;
+            background: linear-gradient(to bottom, #3498db, #2980b9);
+            border-radius: 2px;
+        }
+        
+        .arrow-head {
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 18px solid #2980b9;
+            margin-bottom: -2px;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+        }
+        
+        .arrow-label {
+            font-size: 10px;
+            color: #7f8c8d;
+            margin-top: 5px;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .data-sources {
+                gap: 40px;
+            }
+            .source-group {
+                min-width: 300px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            .data-sources {
+                flex-direction: column;
+                align-items: center;
+                gap: 30px;
+            }
+            .source-group {
+                min-width: 100%;
+                max-width: 400px;
+            }
+        }
+        
+        /* Animation */
+        .layer {
+            animation: fadeInUp 0.6s ease-out forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        .layer:nth-child(1) { animation-delay: 0.1s; }
+        .layer:nth-child(2) { animation-delay: 0.3s; }
+        .layer:nth-child(3) { animation-delay: 0.5s; }
+        .layer:nth-child(4) { animation-delay: 0.7s; }
+        .layer:nth-child(5) { animation-delay: 0.9s; }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title"></h1>
+        
+        <div class="architecture">
+            <!-- Application Layer -->
+            <div class="layer">
+                <div class="layer-title">Application Layer</div>
+                <div class="application">
+                    📱 Your Application
+                </div>
+            </div>
+            
+            <div class="arrow">
+                <div class="arrow-head"></div>
+                <div class="arrow-line"></div>
+                <div class="arrow-label">Data Flow</div>
+            </div>
+            
+            <!-- Redis Cloud Layer -->
+            <div class="layer">
+                <div class="layer-title">Caching & Data Layer</div>
+                <div class="redis-cloud">
+                    <div class="redis-logo">R</div>
+                    Redis Enterprise
+                </div>
+            </div>
+            
+            <div class="arrow">
+                <div class="arrow-head"></div>
+                <div class="arrow-line"></div>
+                <div class="arrow-label">Data Pipeline</div>
+            </div>
+            
+            <!-- Redis Data Integration Layer -->
+            <div class="layer">
+                <div class="layer-title">Data Integration Layer</div>
+                <div class="redis-integration">
+                    🔄 Redis Data Integration<br>
+                    <small>(Data Pipeline & ETL)</small>
+                </div>
+            </div>
+            
+            <div class="arrow">
+                <div class="arrow-head"></div>
+                <div class="arrow-line"></div>
+                <div class="arrow-label">Source Data</div>
+            </div>
+            
+            <!-- Data Sources Layer -->
+            <div class="layer">
+                <div class="layer-title">Data Sources</div>
+                <div class="data-sources">
+                    <!-- AWS Group -->
+                    <div class="source-group">
+                        <div class="cloud-header aws-header">
+                            ☁️ Amazon Web Services (AWS)
+                        </div>
+                        <div class="services-container">
+                            <div class="service-category">
+                                <div class="service-category-title">🛢️ Managed Database Services</div>
+                                <div class="service-items">
+                                    <div class="service-item">AWS RDS</div>
+                                    <div class="service-item">AWS Aurora</div>
+                                    <div class="service-item">DynamoDB</div>
+                                    <div class="service-item">ElastiCache</div>
+                                </div>
+                            </div>
+                            <div class="service-category">
+                                <div class="service-category-title">🖥️ EC2 Hosted Databases</div>
+                                <div class="service-items">
+                                    <div class="service-item">MySQL</div>
+                                    <div class="service-item">PostgreSQL</div>
+                                    <div class="service-item">SQL Server</div>
+                                    <div class="service-item">MongoDB</div>
+                                    <div class="service-item">MariaDB</div>
+                                    <div class="service-item">Oracle</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- GCP Group -->
+                    <div class="source-group">
+                        <div class="cloud-header gcp-header">
+                            ☁️ Google Cloud Platform (GCP)
+                        </div>
+                        <div class="services-container">
+                            <div class="service-category">
+                                <div class="service-category-title">🛢️ Managed Database Services</div>
+                                <div class="service-items">
+                                    <div class="service-item">Cloud SQL</div>
+                                    <div class="service-item">Cloud Spanner</div>
+                                    <div class="service-item">Firestore</div>
+                                    <div class="service-item">BigQuery</div>
+                                </div>
+                            </div>
+                            <div class="service-category">
+                                <div class="service-category-title">🖥️ Compute Engine Hosted DBs</div>
+                                <div class="service-items">
+                                    <div class="service-item">MySQL</div>
+                                    <div class="service-item">PostgreSQL</div>
+                                    <div class="service-item">SQL Server</div>
+                                    <div class="service-item">MongoDB</div>
+                                    <div class="service-item">MariaDB</div>
+                                    <div class="service-item">Oracle</div>
+                                </div>
+                            </div>
+                            <div class="service-category">
+                                <div class="service-category-title">🐳 Container Platforms</div>
+                                <div class="service-items">
+                                    <div class="service-item">GKE (Kubernetes)</div>
+                                    <div class="service-item">GCE Instances</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Third Group (On-Premises) -->
+                    <div class="source-group">
+                        <div class="cloud-header third-group-header">
+                            🏢 On-prem DC
+                        </div>
+                        <div class="services-container">
+                            <div class="service-category">
+                                <div class="service-category-title">🏠 On-Premises Databases</div>
+                                <div class="service-items">
+                                    <div class="service-item">MySQL</div>
+                                    <div class="service-item">PostgreSQL</div>
+                                    <div class="service-item">SQL Server</div>
+                                    <div class="service-item">MongoDB</div>
+                                    <div class="service-item">MariaDB</div>
+                                    <div class="service-item">Oracle</div>
+                                </div>
+                            </div>
+                            <div class="service-category">
+                                <div class="service-category-title">🏢 Enterprise Systems</div>
+                                <div class="service-items">
+                                    <div class="service-item">Legacy DBs</div>
+                                    <div class="service-item">Mainframes</div>
+                                    <div class="service-item">Data Centers</div>
+                                    <div class="service-item">Private Cloud</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 25px; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 3px solid #3498db;">
+            <h3 style="color: #2c3e50; margin-top: 0; font-size: 16px;">📋 Architecture Overview</h3>
+            <p style="color: #34495e; margin: 8px 0; font-size: 13px;">
+                <strong>Data Flow:</strong> Multiple database sources → Redis Data Integration (ETL/CDC) → Redis Cloud (Caching) → Your Application
+            </p>
+            <p style="color: #34495e; margin: 8px 0; font-size: 13px;">
+                <strong>Benefits:</strong> Real-time data synchronization, reduced database load, improved application performance, unified data access layer
+            </p>
+            <p style="color: #34495e; margin: 8px 0; font-size: 13px;">
+                <strong>Redis Data Integration:</strong> Handles change data capture (CDC), data transformation, and real-time synchronization across multiple heterogeneous data sources
+            </p>
+        </div>
+    </div>
+</body>
+</html>
