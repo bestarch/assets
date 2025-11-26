@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redis Homogenous Migration </title>
+    <style>
+        body {
+            margin: 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #ff9a56 0%, #ffad56 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        
+        .title {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 14px;
+            font-style: italic;
+        }
+        
+        .migration-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        /* Source and Target Section */
+        .migration-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 50px;
+            position: relative;
+        }
+        
+        .sources-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .target-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+        
+        /* Source Systems */
+        .source-system {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+            position: relative;
+        }
+        
+        .aws-source {
+            border-left-color: #ff9500;
+            background: linear-gradient(135deg, #fff5ec, #ffffff);
+        }
+        
+        .gcp-source {
+            border-left-color: #4285f4;
+            background: linear-gradient(135deg, #f0f4ff, #ffffff);
+        }
+        
+        .oss-source {
+            border-left-color: #e74c3c;
+            background: linear-gradient(135deg, #fdf2f2, #ffffff);
+        }
+        
+        .source-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .source-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .aws-icon { background: #ff9500; }
+        .gcp-icon { background: #4285f4; }
+        .oss-icon { background: #e74c3c; }
+        
+        .source-title {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        
+        .source-subtitle {
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+        
+        /* Migration Tools */
+        .migration-tools {
+            margin-top: 12px;
+        }
+        
+        .tools-label {
+            font-size: 11px;
+            color: #34495e;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        
+        .tools-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .tool-item {
+            background: #ecf0f1;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #2c3e50;
+            border: 1px solid #bdc3c7;
+        }
+        
+        .riot-tool { background: #e8f8f5; border-color: #1abc9c; color: #16a085; }
+        .export-tool { background: #ebf3fd; border-color: #3498db; color: #2980b9; }
+        .dump-tool { background: #fdf2e9; border-color: #e67e22; color: #d35400; }
+        .replica-tool { background: #fdedec; border-color: #e74c3c; color: #c0392b; }
+        
+        /* Target System */
+        .target-system {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+            text-align: center;
+            min-width: 280px;
+        }
+        
+        .target-icon {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-weight: bold;
+            color: #ff6b6b;
+            font-size: 24px;
+        }
+        
+        .target-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .target-subtitle {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        /* Migration Arrows */
+        .migration-arrow {
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        
+        .arrow-line {
+            width: 20px;
+            height: 2px;
+            background: linear-gradient(to right, #3498db, #2980b9);
+            border-radius: 1px;
+        }
+        
+        .arrow-head {
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 8px solid #2980b9;
+        }
+        
+        /* Application Cutover Section */
+        .cutover-section {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+        
+        .cutover-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .cutover-flow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .app-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 140px;
+        }
+        
+        .app-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .app-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .app-subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .cutover-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .cutover-arrow-line {
+            width: 20px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.6);
+        }
+        
+        .cutover-arrow-head {
+            width: 0;
+            height: 0;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            border-left: 6px solid rgba(255, 255, 255, 0.6);
+        }
+        
+        .cutover-label {
+            font-size: 11px;
+            opacity: 0.7;
+            text-align: center;
+        }
+        
+        /* Benefits Section */
+        .benefits-section {
+            display: flex;
+            gap: 20px;
+            margin-top: 25px;
+        }
+        
+        .benefit-card {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid #3498db;
+        }
+        
+        .benefit-title {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .benefit-text {
+            color: #34495e;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .migration-section {
+                flex-direction: column;
+                gap: 30px;
+            }
+            
+            .migration-arrow {
+                position: static;
+                transform: rotate(90deg);
+                justify-content: center;
+                margin: 10px 0;
+                right: auto;
+                top: auto;
+            }
+            
+            .arrow-line {
+                width: 15px;
+                height: 2px;
+            }
+            
+            .arrow-head {
+                border-top: 4px solid transparent;
+                border-bottom: 4px solid transparent;
+                border-left: 6px solid #2980b9;
+                transform: rotate(90deg);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .cutover-flow {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .cutover-arrow {
+                transform: rotate(90deg);
+            }
+            
+            .benefits-section {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+        
+        /* Animation */
+        .source-system, .target-system, .cutover-section {
+            animation: fadeInUp 0.6s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .source-system:nth-child(1) { animation-delay: 0.1s; }
+        .source-system:nth-child(2) { animation-delay: 0.3s; }
+        .source-system:nth-child(3) { animation-delay: 0.5s; }
+        .target-system { animation-delay: 0.7s; }
+        .cutover-section { animation-delay: 0.9s; }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Redis Homogenous Migration </h1>
+        <p class="subtitle">Seamless migration from Redis-compatible systems to Redis Enterprise</p>
+        
+        <div class="migration-container">
+            <!-- Main Migration Section -->
+            <div class="migration-section">
+                <!-- Source Systems -->
+                <div class="sources-section">
+                    <!-- AWS ElastiCache -->
+                    <div class="source-system aws-source">
+                        <div class="source-header">
+                            <div class="source-icon aws-icon">AWS</div>
+                            <div>
+                                <div class="source-title">AWS ElastiCache</div>
+
+                            </div>
+                        </div>
+                        <div class="migration-tools">
+                            <div class="tools-label">🔧 Migration Tools:</div>
+                            <div class="tools-list">
+                                <div class="tool-item riot-tool">RIOT-X</div>
+                                <div class="tool-item export-tool">Export-Import</div>
+                                <div class="tool-item dump-tool">Dump-Restore</div>
+                            </div>
+                        </div>
+                        <div class="migration-arrow">
+                            <div class="arrow-line"></div>
+                            <div class="arrow-head"></div>
+                        </div>
+                    </div>
+                    
+                    
+                </div>
+                
+                <!-- Target System -->
+                <div class="target-section">
+                    <div class="target-system">
+                        <div class="target-icon">RE</div>
+                        <div class="target-title">Redis Enterprise</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Application Cutover Section -->
+            <div class="cutover-section">
+                <div class="cutover-title">🔄 Seamless Application Cutover</div>
+                <div class="cutover-flow">
+                    <div class="app-box">
+
+                        <div class="app-title">Applications</div>
+                        <div class="app-subtitle">Currently connected to:</div>
+                        <div class="app-subtitle">ElastiCache/Memorystore/OSS</div>
+                    </div>
+                    
+                    <div class="cutover-arrow">
+                        
+                        <div class="cutover-arrow-head"></div>
+                        <div class="cutover-label">Zero Downtime</div>
+                    </div>
+                    
+                    <div class="app-box">
+
+                        <div class="app-title">DNS/Config Switch</div>
+                        <div class="app-subtitle">Connection string update</div>
+                        <div class="app-subtitle">Load balancer redirect</div>
+                    </div>
+                    
+                    <div class="cutover-arrow">
+                       <div class="cutover-arrow-head"></div>
+                        
+                        <div class="cutover-label">Instant Switch</div>
+                    </div>
+                    
+                    <div class="app-box">
+
+                        <div class="app-title">Applications</div>
+                        <div class="app-subtitle">Now connected to:</div>
+                        <div class="app-subtitle">Redis Enterprise</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Benefits Section -->
+            <div class="benefits-section">
+                <div class="benefit-card">
+                    <div class="benefit-title">🎯 Migration Benefits</div>
+                    <div class="benefit-text">
+                        • Zero data loss migration<br>
+                        • Multiple tool options for flexibility<br>
+                        • Minimal application changes<br>
+                        • Real-time data synchronization
+                    </div>
+                </div>
+                
+                <div class="benefit-card">
+                    <div class="benefit-title">⚡ Cutover Advantages</div>
+                    <div class="benefit-text">
+                        • Zero downtime switching<br>
+                        • Instant rollback capability<br>
+                        • DNS-based redirection<br>
+                        • Application transparency
+                    </div>
+                </div>
+                
+                <div class="benefit-card">
+                    <div class="benefit-title">🔧 Tool Capabilities</div>
+                    <div class="benefit-text">
+                        • RIOT-X: Real-time replication<br>
+                        • Export-Import: Bulk data transfer<br>
+                        • Dump-Restore: Snapshot migration<br>
+                        • ReplicaOf: Live replication (OSS)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
